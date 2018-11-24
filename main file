@@ -1,0 +1,397 @@
+from IPython.core.display import HTML
+HTML("""
+<style>
+.output_png {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}
+</style>
+""");
+import pandas as pd
+%matplotlib inline
+
+import warnings
+
+warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+
+pd.options.display.max_columns = 100
+
+from matplotlib import pyplot as plt
+import numpy as np
+
+import seaborn as sns
+
+import pylab as plot
+params = { 
+    'axes.labelsize': "large",
+    'xtick.labelsize': 'x-large',
+    'legend.fontsize': 20,
+    'figure.dpi': 150,
+    'figure.figsize': [25, 7]
+}
+plot.rcParams.update(params)
+import pandas as pd
+
+
+data = pd.read_csv('../input/train.csv')
+print (data.shape)
+(891, 12)
+data.describe()
+PassengerId	Survived	Pclass	Age	SibSp	Parch	Fare
+count	891.000000	891.000000	891.000000	714.000000	891.000000	891.000000	891.000000
+mean	446.000000	0.383838	2.308642	29.699118	0.523008	0.381594	32.204208
+std	257.353842	0.486592	0.836071	14.526497	1.102743	0.806057	49.693429
+min	1.000000	0.000000	1.000000	0.420000	0.000000	0.000000	0.000000
+25%	223.500000	0.000000	2.000000	20.125000	0.000000	0.000000	7.910400
+50%	446.000000	0.000000	3.000000	28.000000	0.000000	0.000000	14.454200
+75%	668.500000	1.000000	3.000000	38.000000	1.000000	0.000000	31.000000
+max	891.000000	1.000000	3.000000	80.000000	8.000000	6.000000	512.329200
+data['Age'] = data['Age'].fillna(data['Age'].median())
+data.describe()
+PassengerId	Survived	Pclass	Age	SibSp	Parch	Fare
+count	891.000000	891.000000	891.000000	891.000000	891.000000	891.000000	891.000000
+mean	446.000000	0.383838	2.308642	29.361582	0.523008	0.381594	32.204208
+std	257.353842	0.486592	0.836071	13.019697	1.102743	0.806057	49.693429
+min	1.000000	0.000000	1.000000	0.420000	0.000000	0.000000	0.000000
+25%	223.500000	0.000000	2.000000	22.000000	0.000000	0.000000	7.910400
+50%	446.000000	0.000000	3.000000	28.000000	0.000000	0.000000	14.454200
+75%	668.500000	1.000000	3.000000	35.000000	1.000000	0.000000	31.000000
+max	891.000000	1.000000	3.000000	80.000000	8.000000	6.000000	512.329200
+data['Died'] = 1 - data['Survived']
+data.groupby('Sex').agg('sum')[['Survived', 'Died']].plot(kind='bar', figsize=(25, 7),
+                                                          stacked=True, colors=['g', 'r']);
+/opt/conda/lib/python3.6/site-packages/pandas/plotting/_core.py:194: UserWarning: 'colors' is being deprecated. Please use 'color'instead of 'colors'
+  warnings.warn(("'colors' is being deprecated. Please use 'color'"
+
+data.groupby('Sex').agg('mean')[['Survived', 'Died']].plot(kind='bar', figsize=(25, 7), 
+                                                           stacked=True, colors=['g', 'r']);
+/opt/conda/lib/python3.6/site-packages/pandas/plotting/_core.py:194: UserWarning: 'colors' is being deprecated. Please use 'color'instead of 'colors'
+  warnings.warn(("'colors' is being deprecated. Please use 'color'"
+
+fig = plt.figure(figsize=(25, 7))
+sns.violinplot(x='Sex', y='Age', 
+               hue='Survived', data=data, 
+               split=True,
+               palette={0: "r", 1: "g"}
+              );
+
+figure = plt.figure(figsize=(25, 7))
+plt.hist([data[data['Survived'] == 1]['Fare'], data[data['Survived'] == 0]['Fare']], 
+         stacked=True, color = ['g','r'],
+         bins = 50, label = ['Survived','Dead'])
+plt.xlabel('Fare')
+plt.ylabel('Number of passengers')
+plt.legend();
+
+plt.figure(figsize=(25, 7))
+ax = plt.subplot()
+
+ax.scatter(data[data['Survived'] == 1]['Age'], data[data['Survived'] == 1]['Fare'], 
+           c='green', s=data[data['Survived'] == 1]['Fare'])
+ax.scatter(data[data['Survived'] == 0]['Age'], data[data['Survived'] == 0]['Fare'], 
+           c='red', s=data[data['Survived'] == 0]['Fare']);
+
+ax = plt.subplot()
+ax.set_ylabel('Average fare')
+data.groupby('Pclass').mean()['Fare'].plot(kind='bar', figsize=(25, 7), ax = ax);
+
+fig = plt.figure(figsize=(25, 7))
+sns.violinplot(x='Embarked', y='Fare', hue='Survived', data=data, split=True, palette={0: "r", 1: "g"});
+
+def status(feature):
+    print ('Processing', feature, ': ok')
+def get_combined_data():
+    # reading train data
+    train = pd.read_csv('../input/train.csv')
+    
+    # reading test data
+    test = pd.read_csv('../input/test.csv')
+
+    # extracting and then removing the targets from the training data 
+    targets = train.Survived
+    train.drop(['Survived'], 1, inplace=True)
+    
+
+    # merging train data and test data for future feature engineering
+    # we'll also remove the PassengerID since this is not an informative feature
+    combined = train.append(test)
+    combined.reset_index(inplace=True)
+    combined.drop(['index', 'PassengerId'], inplace=True, axis=1)
+    
+    return combined
+combined = get_combined_data()
+print (combined.shape)
+(1309, 10)
+titles = set()
+for name in data['Name']:
+    titles.add(name.split(',')[1].split('.')[0].strip())
+print (titles)
+{'Miss', 'Ms', 'Mrs', 'Lady', 'Mlle', 'Capt', 'Master', 'the Countess', 'Jonkheer', 'Rev', 'Col', 'Sir', 'Dr', 'Major', 'Mr', 'Don', 'Mme'}
+Title_Dictionary = {
+    "Capt": "Officer",
+    "Col": "Officer",
+    "Major": "Officer",
+    "Jonkheer": "Royalty",
+    "Don": "Royalty",
+    "Sir" : "Royalty",
+    "Dr": "Officer",
+    "Rev": "Officer",
+    "the Countess":"Royalty",
+    "Mme": "Mrs",
+    "Mlle": "Miss",
+    "Ms": "Mrs",
+    "Mr" : "Mr",
+    "Mrs" : "Mrs",
+    "Miss" : "Miss",
+    "Master" : "Master",
+    "Lady" : "Royalty"
+}
+
+def get_titles():
+    # we extract the title from each name
+    combined['Title'] = combined['Name'].map(lambda name:name.split(',')[1].split('.')[0].strip())
+    
+    # a map of more aggregated title
+    # we map each title
+    combined['Title'] = combined.Title.map(Title_Dictionary)
+    status('Title')
+    return combined
+combined = get_titles()
+Processing Title : ok
+combined.head()
+Pclass	Name	Sex	Age	SibSp	Parch	Ticket	Fare	Cabin	Embarked	Title
+0	3	Braund, Mr. Owen Harris	male	22.0	1	0	A/5 21171	7.2500	NaN	S	Mr
+1	1	Cumings, Mrs. John Bradley (Florence Briggs Th...	female	38.0	1	0	PC 17599	71.2833	C85	C	Mrs
+2	3	Heikkinen, Miss. Laina	female	26.0	0	0	STON/O2. 3101282	7.9250	NaN	S	Miss
+3	1	Futrelle, Mrs. Jacques Heath (Lily May Peel)	female	35.0	1	0	113803	53.1000	C123	S	Mrs
+4	3	Allen, Mr. William Henry	male	35.0	0	0	373450	8.0500	NaN	S	Mr
+combined[combined['Title'].isnull()]
+Pclass	Name	Sex	Age	SibSp	Parch	Ticket	Fare	Cabin	Embarked	Title
+1305	1	Oliva y Ocana, Dona. Fermina	female	39.0	0	0	PC 17758	108.9	C105	C	NaN
+print (combined.iloc[:891].Age.isnull().sum())
+177
+print (combined.iloc[891:].Age.isnull().sum())
+86
+grouped_train = combined.iloc[:891].groupby(['Sex','Pclass','Title'])
+grouped_median_train = grouped_train.median()
+grouped_median_train = grouped_median_train.reset_index()[['Sex', 'Pclass', 'Title', 'Age']]
+grouped_median_train.head()
+Sex	Pclass	Title	Age
+0	female	1	Miss	30.0
+1	female	1	Mrs	40.0
+2	female	1	Officer	49.0
+3	female	1	Royalty	40.5
+4	female	2	Miss	24.0
+def fill_age(row):
+    condition = (
+        (grouped_median_train['Sex'] == row['Sex']) & 
+        (grouped_median_train['Title'] == row['Title']) & 
+        (grouped_median_train['Pclass'] == row['Pclass'])
+    ) 
+    return grouped_median_train[condition]['Age'].values[0]
+
+
+def process_age():
+    global combined
+    # a function that fills the missing values of the Age variable
+    combined['Age'] = combined.apply(lambda row: fill_age(row) if np.isnan(row['Age']) else row['Age'], axis=1)
+    status('age')
+    return combined
+combined = process_age()
+Processing age : ok
+def process_names():
+    global combined
+    # we clean the Name variable
+    combined.drop('Name', axis=1, inplace=True)
+    
+    # encoding in dummy variable
+    titles_dummies = pd.get_dummies(combined['Title'], prefix='Title')
+    combined = pd.concat([combined, titles_dummies], axis=1)
+    
+    # removing the title variable
+    combined.drop('Title', axis=1, inplace=True)
+    
+    status('names')
+    return combined
+combined = process_names()
+Processing names : ok
+combined.head()
+Pclass	Sex	Age	SibSp	Parch	Ticket	Fare	Cabin	Embarked	Title_Master	Title_Miss	Title_Mr	Title_Mrs	Title_Officer	Title_Royalty
+0	3	male	22.0	1	0	A/5 21171	7.2500	NaN	S	0	0	1	0	0	0
+1	1	female	38.0	1	0	PC 17599	71.2833	C85	C	0	0	0	1	0	0
+2	3	female	26.0	0	0	STON/O2. 3101282	7.9250	NaN	S	0	1	0	0	0	0
+3	1	female	35.0	1	0	113803	53.1000	C123	S	0	0	0	1	0	0
+4	3	male	35.0	0	0	373450	8.0500	NaN	S	0	0	1	0	0	0
+def process_fares():
+    global combined
+    # there's one missing fare value - replacing it with the mean.
+    combined.Fare.fillna(combined.iloc[:891].Fare.mean(), inplace=True)
+    status('fare')
+    return combined
+combined = process_fares()
+Processing fare : ok
+def process_embarked():
+    global combined
+    # two missing embarked values - filling them with the most frequent one in the train  set(S)
+    combined.Embarked.fillna('S', inplace=True)
+    # dummy encoding 
+    embarked_dummies = pd.get_dummies(combined['Embarked'], prefix='Embarked')
+    combined = pd.concat([combined, embarked_dummies], axis=1)
+    combined.drop('Embarked', axis=1, inplace=True)
+    status('embarked')
+    return combined
+combined = process_embarked()
+Processing embarked : ok
+combined.head()
+Pclass	Sex	Age	SibSp	Parch	Ticket	Fare	Cabin	Title_Master	Title_Miss	Title_Mr	Title_Mrs	Title_Officer	Title_Royalty	Embarked_C	Embarked_Q	Embarked_S
+0	3	male	22.0	1	0	A/5 21171	7.2500	NaN	0	0	1	0	0	0	0	0	1
+1	1	female	38.0	1	0	PC 17599	71.2833	C85	0	0	0	1	0	0	1	0	0
+2	3	female	26.0	0	0	STON/O2. 3101282	7.9250	NaN	0	1	0	0	0	0	0	0	1
+3	1	female	35.0	1	0	113803	53.1000	C123	0	0	0	1	0	0	0	0	1
+4	3	male	35.0	0	0	373450	8.0500	NaN	0	0	1	0	0	0	0	0	1
+train_cabin, test_cabin = set(), set()
+
+for c in combined.iloc[:891]['Cabin']:
+    try:
+        train_cabin.add(c[0])
+    except:
+        train_cabin.add('U')
+        
+for c in combined.iloc[891:]['Cabin']:
+    try:
+        test_cabin.add(c[0])
+    except:
+        test_cabin.add('U')
+print (train_cabin)
+{'G', 'F', 'U', 'E', 'B', 'A', 'T', 'D', 'C'}
+print (test_cabin)
+{'D', 'G', 'F', 'U', 'B', 'A', 'E', 'C'}
+def process_cabin():
+    global combined    
+    # replacing missing cabins with U (for Uknown)
+    combined.Cabin.fillna('U', inplace=True)
+    
+    # mapping each Cabin value with the cabin letter
+    combined['Cabin'] = combined['Cabin'].map(lambda c: c[0])
+    
+    # dummy encoding ...
+    cabin_dummies = pd.get_dummies(combined['Cabin'], prefix='Cabin')    
+    combined = pd.concat([combined, cabin_dummies], axis=1)
+
+    combined.drop('Cabin', axis=1, inplace=True)
+    status('cabin')
+    return combined
+combined = process_cabin()
+Processing cabin : ok
+combined.head()
+Pclass	Sex	Age	SibSp	Parch	Ticket	Fare	Title_Master	Title_Miss	Title_Mr	Title_Mrs	Title_Officer	Title_Royalty	Embarked_C	Embarked_Q	Embarked_S	Cabin_A	Cabin_B	Cabin_C	Cabin_D	Cabin_E	Cabin_F	Cabin_G	Cabin_T	Cabin_U
+0	3	male	22.0	1	0	A/5 21171	7.2500	0	0	1	0	0	0	0	0	1	0	0	0	0	0	0	0	0	1
+1	1	female	38.0	1	0	PC 17599	71.2833	0	0	0	1	0	0	1	0	0	0	0	1	0	0	0	0	0	0
+2	3	female	26.0	0	0	STON/O2. 3101282	7.9250	0	1	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	1
+3	1	female	35.0	1	0	113803	53.1000	0	0	0	1	0	0	0	0	1	0	0	1	0	0	0	0	0	0
+4	3	male	35.0	0	0	373450	8.0500	0	0	1	0	0	0	0	0	1	0	0	0	0	0	0	0	0	1
+def process_sex():
+    global combined
+    # mapping string values to numerical one 
+    combined['Sex'] = combined['Sex'].map({'male':1, 'female':0})
+    status('Sex')
+    return combined
+combined = process_sex()
+Processing Sex : ok
+def process_pclass():
+    
+    global combined
+    # encoding into 3 categories:
+    pclass_dummies = pd.get_dummies(combined['Pclass'], prefix="Pclass")
+    
+    # adding dummy variable
+    combined = pd.concat([combined, pclass_dummies],axis=1)
+    
+    # removing "Pclass"
+    combined.drop('Pclass',axis=1,inplace=True)
+    
+    status('Pclass')
+    return combined
+combined = process_pclass()
+Processing Pclass : ok
+def cleanTicket(ticket):
+    ticket = ticket.replace('.', '')
+    ticket = ticket.replace('/', '')
+    ticket = ticket.split()
+    ticket = map(lambda t : t.strip(), ticket)
+    ticket = list(filter(lambda t : not t.isdigit(), ticket))
+    if len(ticket) > 0:
+        return ticket[0]
+    else: 
+        return ('XXX')
+tickets = set()
+for t in combined['Ticket']:
+    tickets.add(cleanTicket(t))
+print (len(tickets))
+37
+def process_ticket():
+    
+    global combined
+    
+    
+    # Extracting dummy variables from tickets:
+
+    combined['Ticket'] = combined['Ticket'].map(cleanTicket)
+    tickets_dummies = pd.get_dummies(combined['Ticket'], prefix='Ticket')
+    combined = pd.concat([combined, tickets_dummies], axis=1)
+    combined.drop('Ticket', inplace=True, axis=1)
+
+    status('Ticket')
+    return combined
+combined = process_ticket()
+Processing Ticket : ok
+def process_family():
+    
+    global combined
+    # introducing a new feature : the size of families (including the passenger)
+    combined['FamilySize'] = combined['Parch'] + combined['SibSp'] + 1
+    
+    # introducing other features based on the family size
+    combined['Singleton'] = combined['FamilySize'].map(lambda s: 1 if s == 1 else 0)
+    combined['SmallFamily'] = combined['FamilySize'].map(lambda s: 1 if 2 <= s <= 4 else 0)
+    combined['LargeFamily'] = combined['FamilySize'].map(lambda s: 1 if 5 <= s else 0)
+    
+    status('family')
+    return combined
+combined = process_family()
+Processing family : ok
+print (combined.shape)
+(1309, 67)
+combined.head()
+Sex	Age	SibSp	Parch	Fare	Title_Master	Title_Miss	Title_Mr	Title_Mrs	Title_Officer	Title_Royalty	Embarked_C	Embarked_Q	Embarked_S	Cabin_A	Cabin_B	Cabin_C	Cabin_D	Cabin_E	Cabin_F	Cabin_G	Cabin_T	Cabin_U	Pclass_1	Pclass_2	Pclass_3	Ticket_A	Ticket_A4	Ticket_A5	Ticket_AQ3	Ticket_AQ4	Ticket_AS	Ticket_C	Ticket_CA	Ticket_CASOTON	Ticket_FC	Ticket_FCC	Ticket_Fa	Ticket_LINE	Ticket_LP	Ticket_PC	Ticket_PP	Ticket_PPP	Ticket_SC	Ticket_SCA3	Ticket_SCA4	Ticket_SCAH	Ticket_SCOW	Ticket_SCPARIS	Ticket_SCParis	Ticket_SOC	Ticket_SOP	Ticket_SOPP	Ticket_SOTONO2	Ticket_SOTONOQ	Ticket_SP	Ticket_STONO	Ticket_STONO2	Ticket_STONOQ	Ticket_SWPP	Ticket_WC	Ticket_WEP	Ticket_XXX	FamilySize	Singleton	SmallFamily	LargeFamily
+0	1	22.0	1	0	7.2500	0	0	1	0	0	0	0	0	1	0	0	0	0	0	0	0	0	1	0	0	1	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	2	0	1	0
+1	0	38.0	1	0	71.2833	0	0	0	1	0	0	1	0	0	0	0	1	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	2	0	1	0
+2	0	26.0	0	0	7.9250	0	1	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	1	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	1	1	0	0
+3	0	35.0	1	0	53.1000	0	0	0	1	0	0	0	0	1	0	0	1	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	2	0	1	0
+4	1	35.0	0	0	8.0500	0	0	1	0	0	0	0	0	1	0	0	0	0	0	0	0	0	1	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	1	1	0	0
+from sklearn.pipeline import make_pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
+from sklearn.feature_selection import SelectKBest
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
+from sklearn.feature_selection import SelectFromModel
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
+def compute_score(clf, X, y, scoring='accuracy'):
+    xval = cross_val_score(clf, X, y, cv = 5, scoring=scoring)
+    return np.mean(xval)
+def recover_train_test_target():
+    global combined
+    
+    targets = pd.read_csv('../input/train.csv', usecols=['Survived'])['Survived'].values
+    train = combined.iloc[:891]
+    test = combined.iloc[891:]
+    
+    return train, test, targets
+train, test, targets = recover_train_test_target()
+clf = RandomForestClassifier(n_estimators=50, max_features='sqrt')
+clf = clf.fit(train, targets)
